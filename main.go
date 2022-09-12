@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"go-crawler-api/engineCrawler"
+	"go-crawler-api/frontBumperCrawler"
+	"go-crawler-api/rearBumperCrawler"
 	"go-crawler-api/transmissionCrawler"
 )
 
@@ -26,10 +28,10 @@ func main() {
 	case 2:
 		transmissionCrawler.Router()
 	case 3:
-		fmt.Println("Comming Soon...")
+		frontBumperCrawler.Router()
 	case 4:
-		fmt.Println("Comming Soon...")
+		rearBumperCrawler.Router()
 	default:
-		fmt.Println("Please enter correct part option number such as 1, 2 , 3, 4, etc...")
+		fmt.Println("Please enter correct part option number such as 1, 2, 3, 4, etc...")
 	}
 }
