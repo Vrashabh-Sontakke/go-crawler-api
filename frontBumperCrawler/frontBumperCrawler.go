@@ -22,40 +22,40 @@ type Output struct {
 
 func Router() {
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/{vin}", frontBumperCrawler)
+	router.HandleFunc("/{vin}", partCrawler)
 
 	fmt.Println("Running... localhost:8000/{vin}")
 	http.ListenAndServe(":8000", router)
 }
 
-func frontBumperCrawler(w http.ResponseWriter, r *http.Request) {
+func partCrawler(w http.ResponseWriter, r *http.Request) {
 
-	//var frontBumpers []FrontBumper
+	//var parts []Part
 	vars := mux.Vars(r)
 	vin := vars["vin"]
 
 	// INITIATE MEGA CRAWLERS
 
-	// Crawler that gets link to actual frontBumper page
-	link, err := getFrontBumperLink(vin)
+	// Crawler that gets link to actual part page
+	link, err := getPartLink(vin)
 	if err != nil {
-		log.Println("Error getting FrontBumper Page Link")
+		log.Println("Error getting Part Page Link")
 	}
 
-	// Crawler for actual FrontBumper Page
-	frontBumpers, err := getFrontBumpers(*link)
+	// Crawler for actual Part Page
+	parts, err := getParts(*link)
 	if err != nil {
-		log.Println("Error getting frontBumpers.")
+		log.Println("Error getting parts.")
 	}
-	// Crawler to get individual frontBumper Data
-	frontBumperData, err := getIndividualFrontBumperData(frontBumpers)
+	// Crawler to get individual part Data
+	partData, err := getIndividualPartData(parts)
 	if err != nil {
-		log.Println("Issue getting frontBumpers.")
+		log.Println("Issue getting parts.")
 	}
 
 	w.Header().Add("Content-Type", "application/json")
 
-	j, err := json.Marshal(frontBumperData)
+	j, err := json.Marshal(partData)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -64,7 +64,7 @@ func frontBumperCrawler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func getFrontBumperLink(vin string) (*string, error) {
+func getPartLink(vin string) (*string, error) {
 	var links []Output
 	c := colly.NewCollector(
 		colly.AllowURLRevisit(),
@@ -119,14 +119,14 @@ func getFrontBumperLink(vin string) (*string, error) {
 	})
 	c.Wait()
 
-	frontBumperLink := links[1]
+	partLink := links[1]
 
-	return &frontBumperLink.URL, nil
+	return &partLink.URL, nil
 
 }
 
-func getFrontBumpers(url_suffix string) ([]Output, error) {
-	var frontBumpers []Output
+func getParts(url_suffix string) ([]Output, error) {
+	var parts []Output
 	c := colly.NewCollector(
 		colly.AllowURLRevisit(),
 	)
@@ -137,7 +137,7 @@ func getFrontBumpers(url_suffix string) ([]Output, error) {
 				Name: h.ChildText("a"),
 				URL:  h.ChildAttr("a", "href"),
 			}
-			frontBumpers = append(frontBumpers, e)
+			parts = append(parts, e)
 			c.Visit(h.Request.AbsoluteURL(h.ChildAttr("a", "href")))
 		})
 
@@ -148,15 +148,15 @@ func getFrontBumpers(url_suffix string) ([]Output, error) {
 	c.Visit("https://www.hollanderparts.com/" + url_suffix)
 	c.Wait()
 
-	return frontBumpers, nil
+	return parts, nil
 
 }
 
-func getIndividualFrontBumperData(links []Output) ([]Output, error) {
+func getIndividualPartData(links []Output) ([]Output, error) {
 
-	var frontBumpers []Output
+	var parts []Output
 
-	for _, frontBumper := range links {
+	for _, part := range links {
 		c := colly.NewCollector(
 			colly.AllowURLRevisit(),
 		)
@@ -178,21 +178,21 @@ func getIndividualFrontBumperData(links []Output) ([]Output, error) {
 				Shipping: shipping,
 			}
 
-			frontBumpers = append(frontBumpers, e)
+			parts = append(parts, e)
 
 		})
 		c.OnRequest(func(r *colly.Request) {
 			log.Println("visiting", r.URL.String())
 		})
 
-		c.Visit("https://www.hollanderparts.com/" + frontBumper.URL)
+		c.Visit("https://www.hollanderparts.com/" + part.URL)
 
 		c.Wait()
 
 	}
 
-	fmt.Println(frontBumpers)
+	fmt.Println(parts)
 
-	return frontBumpers, nil
+	return parts, nil
 
 }

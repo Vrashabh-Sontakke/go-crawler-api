@@ -1,4 +1,4 @@
-package engineCrawler
+package rearQuarterPanelCrawler
 
 import (
 	"encoding/json"
@@ -74,15 +74,29 @@ func getPartLink(vin string) (*string, error) {
 		log.Println("visiting", r.URL.String())
 	})
 
-	c.OnHTML("div[class=searchColOne]", func(h *colly.HTMLElement) {
+	c.OnHTML("div[class=searchColTwo]", func(h *colly.HTMLElement) {
 		h.ForEach("div", func(i int, h *colly.HTMLElement) {
-			if h.ChildText("a") == "Engine" && h.ChildAttr("a", "href") != "" {
+			if h.ChildText("a") == "Rear Body" && h.ChildAttr("a", "href") != "" {
 				e := Output{
 					Name: h.ChildText("a"),
 					URL:  h.ChildAttr("a", "href"),
 				}
 				links = append(links, e)
 				c.Visit(h.Request.AbsoluteURL(h.ChildAttr("a", "href")))
+			} else {
+				c.OnHTML("div[class=searchColTwo]", func(h *colly.HTMLElement) {
+					h.ForEach("div", func(i int, h *colly.HTMLElement) {
+						if h.ChildText("a") == "Quarter Panel" && h.ChildAttr("a", "href") != "" {
+							e := Output{
+								Name: h.ChildText("a"),
+								URL:  h.ChildAttr("a", "href"),
+							}
+							links = append(links, e)
+							c.Visit(h.Request.AbsoluteURL(h.ChildAttr("a", "href")))
+						}
+					})
+
+				})
 			}
 		})
 

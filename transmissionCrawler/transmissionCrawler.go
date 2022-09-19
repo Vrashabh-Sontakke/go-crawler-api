@@ -22,40 +22,40 @@ type Output struct {
 
 func Router() {
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/{vin}", transmissionCrawler)
+	router.HandleFunc("/{vin}", partCrawler)
 
 	fmt.Println("Running... localhost:8000/{vin}")
 	http.ListenAndServe(":8000", router)
 }
 
-func transmissionCrawler(w http.ResponseWriter, r *http.Request) {
+func partCrawler(w http.ResponseWriter, r *http.Request) {
 
-	//var transmission []Transmission
+	//var parts []Part
 	vars := mux.Vars(r)
 	vin := vars["vin"]
 
 	// INITIATE MEGA CRAWLERS
 
-	// Crawler that gets link to actual transmission page
-	link, err := getTransmissionLink(vin)
+	// Crawler that gets link to actual part page
+	link, err := getPartLink(vin)
 	if err != nil {
-		log.Println("Error getting Transmission Page Link")
+		log.Println("Error getting Part Page Link")
 	}
 
-	// Crawler for actual transmission Page
-	transmissions, err := getTransmissions(*link)
+	// Crawler for actual Part Page
+	parts, err := getParts(*link)
 	if err != nil {
-		log.Println("Error getting transmissions.")
+		log.Println("Error getting parts.")
 	}
-	// Crawler to get individual transmission Data
-	transmissionData, err := getIndividualTransmissionData(transmissions)
+	// Crawler to get individual part Data
+	partData, err := getIndividualPartData(parts)
 	if err != nil {
-		log.Println("Error getting transmissions.")
+		log.Println("Issue getting parts.")
 	}
 
 	w.Header().Add("Content-Type", "application/json")
 
-	j, err := json.Marshal(transmissionData)
+	j, err := json.Marshal(partData)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -64,7 +64,7 @@ func transmissionCrawler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func getTransmissionLink(vin string) (*string, error) {
+func getPartLink(vin string) (*string, error) {
 	var links []Output
 	c := colly.NewCollector(
 		colly.AllowURLRevisit(),
@@ -105,14 +105,14 @@ func getTransmissionLink(vin string) (*string, error) {
 	})
 	c.Wait()
 
-	transmissionLink := links[1]
+	partLink := links[1]
 
-	return &transmissionLink.URL, nil
+	return &partLink.URL, nil
 
 }
 
-func getTransmissions(url_suffix string) ([]Output, error) {
-	var transmissions []Output
+func getParts(url_suffix string) ([]Output, error) {
+	var parts []Output
 	c := colly.NewCollector(
 		colly.AllowURLRevisit(),
 	)
@@ -123,7 +123,7 @@ func getTransmissions(url_suffix string) ([]Output, error) {
 				Name: h.ChildText("a"),
 				URL:  h.ChildAttr("a", "href"),
 			}
-			transmissions = append(transmissions, e)
+			parts = append(parts, e)
 			c.Visit(h.Request.AbsoluteURL(h.ChildAttr("a", "href")))
 		})
 
@@ -134,15 +134,15 @@ func getTransmissions(url_suffix string) ([]Output, error) {
 	c.Visit("https://www.hollanderparts.com/" + url_suffix)
 	c.Wait()
 
-	return transmissions, nil
+	return parts, nil
 
 }
 
-func getIndividualTransmissionData(links []Output) ([]Output, error) {
+func getIndividualPartData(links []Output) ([]Output, error) {
 
-	var transmissions []Output
+	var parts []Output
 
-	for _, transmission := range links {
+	for _, part := range links {
 		c := colly.NewCollector(
 			colly.AllowURLRevisit(),
 		)
@@ -164,21 +164,21 @@ func getIndividualTransmissionData(links []Output) ([]Output, error) {
 				Shipping: shipping,
 			}
 
-			transmissions = append(transmissions, e)
+			parts = append(parts, e)
 
 		})
 		c.OnRequest(func(r *colly.Request) {
 			log.Println("visiting", r.URL.String())
 		})
 
-		c.Visit("https://www.hollanderparts.com/" + transmission.URL)
+		c.Visit("https://www.hollanderparts.com/" + part.URL)
 
 		c.Wait()
 
 	}
 
-	fmt.Println(transmissions)
+	fmt.Println(parts)
 
-	return transmissions, nil
+	return parts, nil
 
 }

@@ -1,4 +1,4 @@
-package engineCrawler
+package fenderCrawler
 
 import (
 	"encoding/json"
@@ -76,13 +76,27 @@ func getPartLink(vin string) (*string, error) {
 
 	c.OnHTML("div[class=searchColOne]", func(h *colly.HTMLElement) {
 		h.ForEach("div", func(i int, h *colly.HTMLElement) {
-			if h.ChildText("a") == "Engine" && h.ChildAttr("a", "href") != "" {
+			if h.ChildText("a") == "Front Body" && h.ChildAttr("a", "href") != "" {
 				e := Output{
 					Name: h.ChildText("a"),
 					URL:  h.ChildAttr("a", "href"),
 				}
 				links = append(links, e)
 				c.Visit(h.Request.AbsoluteURL(h.ChildAttr("a", "href")))
+			} else {
+				c.OnHTML("div[class=searchColOne]", func(h *colly.HTMLElement) {
+					h.ForEach("div", func(i int, h *colly.HTMLElement) {
+						if h.ChildText("a") == "Fender" && h.ChildAttr("a", "href") != "" {
+							e := Output{
+								Name: h.ChildText("a"),
+								URL:  h.ChildAttr("a", "href"),
+							}
+							links = append(links, e)
+							c.Visit(h.Request.AbsoluteURL(h.ChildAttr("a", "href")))
+						}
+					})
+
+				})
 			}
 		})
 
